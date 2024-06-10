@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canadian Fish Game</title>
+</head>
+<body>
+    <h1>Canadian Fish Game</h1>
+    <input type="text" id="name" placeholder="Your Name">
+    <select id="team">
+        <option value="0">Team 1</option>
+        <option value="1">Team 2</option>
+    </select>
+    <button id="joinGame">Join Game</button>
+    <div id="gameArea" style="display:none;">
+        <button id="askCard">Ask Card</button>
+        <button id="declareSuit">Claim Suit</button>
+        <div id="hand"></div>
+    </div>
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="https://cdn.socket.io/4.3.1/socket.io.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        document.getElementById('joinGame').addEventListener('click', () => {
+            const name = document.getElementById('name').value;
+            const team = document.getElementById('team').value;
+            socket.emit('JOIN_GAME', name, parseInt(team));
+        });
+
+        socket.on('GAME_START', (gameState) => {
+            document.getElementById('gameArea').style.display = 'block';
+            updateHand(gameState.players[socket.id].hand);
+        });
+
+        document.getElementById('askCard').addEventListener('click', () => {
+            const card = prompt('Which card do you want to ask for? (e.g., 7S)');
+            const opponentId = prompt('Which opponent do you want to ask? (ID)');
+            socket.emit('PLAYER_ACTION', { type: 'ASK_CARD', card, opponentId });
+        });
+
+        document.getElementById('declareSuit').addEventListener('click', () => {
+            const suit = prompt('Which half suit do you want to claim? (e.g., low_spades)');
+            socket.emit('PLAYER_ACTION', { type: 'DECLARE_SUIT', suit });
+        });
+
+        socket.on('UPDATE_HAND', (hand) => {
+            updateHand(hand);
+        });
+
+        socket.on('SUIT_DECLARED', ({ suit, team }) => {
+            alert(`Team ${team + 1} claimed ${suit}`);
+        });
+
+        socket.on('TURN_UPDATE', (currentTurn) => {
+            // Update UI to indicate whose turn it is
+        });
+
+        function updateHand(hand) {
+            const handDiv = document.getElementById('hand');
+            handDiv.innerHTML = hand.map(card => `<span>${card}</span>`).join(' ');
+        }
+    </script>
+</body>
+</html>
